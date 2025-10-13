@@ -1,0 +1,408 @@
+/* 🌈 ====== ОСНОВНОЙ СТИЛЬ САЙТА ====== */
+
+/* Фон и общие стили */
+body {
+    font-family: "Inter", "Segoe UI", Roboto, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+}
+
+/* ===== NAVBAR ===== */
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+}
+
+.nav-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 15px 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.nav-logo {
+    font-size: 22px;
+    font-weight: 700;
+    color: white;
+    letter-spacing: 0.5px;
+}
+
+.nav-links {
+    list-style: none;
+    display: flex;
+    gap: 25px;
+    margin: 0;
+    padding: 0;
+}
+
+.nav-links a {
+    color: #edf2f7;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 16px;
+    transition: all 0.3s ease;
+}
+
+.nav-links a:hover {
+    color: #fff;
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+    transform: scale(1.05);
+}
+
+/* Чтобы контент не залезал под Navbar */
+body {
+    padding-top: 80px;
+}
+
+/* ====== Контейнер ====== */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+/* ====== Главная страница ====== */
+.welcome-section {
+    text-align: center;
+    background: rgba(255, 255, 255, 0.96);
+    padding: 60px 40px;
+    border-radius: 20px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    animation: slideIn 0.5s ease-out;
+    backdrop-filter: blur(10px);
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.welcome-section h2 {
+    color: #2d3748;
+    font-size: 32px;
+    margin-bottom: 15px;
+    font-weight: 700;
+}
+
+.welcome-section p {
+    color: #4a5568;
+    font-size: 18px;
+    margin-bottom: 30px;
+}
+
+.auth-buttons {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+/* ====== Контейнер формы ====== */
+.form-container {
+    background: rgba(255, 255, 255, 0.96);
+    padding: 40px 35px;
+    border-radius: 20px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    max-width: 400px;
+    width: 100%;
+    margin: 0 auto;
+    animation: slideIn 0.5s ease-out;
+    backdrop-filter: blur(10px);
+}
+
+/* Анимация появления формы */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Заголовок формы */
+.form-container h2 {
+    text-align: center;
+    margin-bottom: 25px;
+    font-size: 24px;
+    color: #2d3748;
+    font-weight: 700;
+}
+
+/* ====== Поля формы ====== */
+.auth-form {
+    margin-bottom: 20px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #4a5568;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    background-color: #fff;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+/* ====== Кнопки ====== */
+button {
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    border-radius: 8px;
+}
+
+.btn {
+    padding: 12px 24px;
+    font-size: 16px;
+    border-radius: 8px;
+}
+
+.btn-primary {
+    background: #667eea;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #5a67d8;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.btn-full {
+    width: 100%;
+    padding: 12px 0;
+}
+
+/* ====== Разделитель (или "ИЛИ") ====== */
+.divider {
+    margin: 25px 0;
+    text-align: center;
+    position: relative;
+}
+
+.divider::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: #e2e8f0;
+}
+
+.divider span {
+    background: white;
+    padding: 0 15px;
+    color: #718096;
+    font-size: 14px;
+}
+
+/* ====== Кнопка Google ====== */
+.google-btn-custom {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 0;
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-weight: 600;
+    color: #4a5568;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 16px;
+}
+
+.google-btn-custom:hover {
+    background: #f7fafc;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.google-icon {
+    background: conic-gradient(from -45deg, #ea4335 110deg, #4285f4 90deg 180deg, #34a853 180deg 270deg, #fbbc05 270deg) 73% 55%/150% 150% no-repeat;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+/* ====== Секция пользователя ====== */
+.user-section {
+    text-align: center;
+    background: rgba(255, 255, 255, 0.96);
+    padding: 50px 40px;
+    border-radius: 20px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    animation: fadeIn 0.6s ease-in-out;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.user-info-card {
+    background: #f7fafc;
+    padding: 30px;
+    border-radius: 12px;
+    border-left: 4px solid #48bb78;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    margin: 20px 0;
+}
+
+.user-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    margin-bottom: 15px;
+    border: 3px solid #667eea;
+    object-fit: cover;
+}
+
+.user-email {
+    color: #4a5568;
+    margin: 10px 0;
+    font-size: 16px;
+}
+
+/* ====== Кнопки действий ====== */
+.actions {
+    margin-top: 25px;
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn-success {
+    background: #48bb78;
+    color: white;
+    padding: 12px 24px;
+}
+
+.btn-success:hover {
+    background: #38a169;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(72, 187, 120, 0.3);
+}
+
+.btn-secondary {
+    background: #edf2f7;
+    color: #4a5568;
+    padding: 12px 24px;
+}
+
+.btn-secondary:hover {
+    background: #e2e8f0;
+    transform: translateY(-2px);
+}
+
+/* ====== Переключение между входом и регистрацией ====== */
+.auth-switch {
+    text-align: center;
+    color: #718096;
+    margin-top: 20px;
+}
+
+.auth-switch a {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.auth-switch a:hover {
+    text-decoration: underline;
+}
+
+/* ====== Анимации ====== */
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+/* ====== Адаптивность ====== */
+@media (max-width: 768px) {
+    .nav-container {
+        padding: 12px 20px;
+    }
+    
+    .nav-links {
+        gap: 15px;
+    }
+    
+    .container {
+        padding: 20px 15px;
+    }
+    
+    .welcome-section {
+        padding: 40px 25px;
+    }
+    
+    .form-container {
+        padding: 30px 25px;
+    }
+    
+    .auth-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .btn {
+        width: 100%;
+        max-width: 250px;
+    }
+}
+
+@media (max-width: 480px) {
+    .nav-logo {
+        font-size: 18px;
+    }
+    
+    .nav-links {
+        gap: 12px;
+    }
+    
+    .nav-links a {
+        font-size: 14px;
+    }
+    
+    .form-container {
+        padding: 25px 20px;
+        border-radius: 15px;
+    }
+    
+    .form-container h2 {
+        font-size: 20px;
+    }
+}
