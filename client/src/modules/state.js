@@ -1,23 +1,23 @@
 // Состояние приложения
 export let currentUser = null
-export let pendingUser = null // временно хранит незарегистрированного юзера (до подтверждения кода)
-export let verificationCode = null
 
 export const setCurrentUser = (user) => {
     currentUser = user
+    if (user) {
+        localStorage.setItem('currentUser', JSON.stringify(user))
+        localStorage.setItem('token', user.token)
+    } else {
+        localStorage.removeItem('currentUser')
+        localStorage.removeItem('token')
+    }
 }
 
-export const setPendingUser = (user) => {
-    pendingUser = user
-}
-
-export const setVerificationCode = (code) => {
-    verificationCode = code
+export const getCurrentUser = () => {
+    return currentUser
 }
 
 export const clearAuthState = () => {
     currentUser = null
-    pendingUser = null
-    verificationCode = null
+    localStorage.removeItem('currentUser')
+    localStorage.removeItem('token')
 }
-

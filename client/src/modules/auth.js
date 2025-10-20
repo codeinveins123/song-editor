@@ -1,7 +1,11 @@
-import { pendingUser, setPendingUser, setCurrentUser, verificationCode, setVerificationCode } from './state.js'
-import { sendVerificationCode } from './emailService.js'
+import { setCurrentUser, clearAuthState } from './state.js'
 import { showVerificationForm, showSuccessPage, showLoginForm, showRegisterForm } from './pages.js'
 import { initializeGoogleAuth, handleGoogleAuth } from './googleAuth.js'
+import { authAPI } from './api.js'
+import emailjs from '@emailjs/browser'
+
+// Инициализация EmailJS
+emailjs.init("DCJDcWp4UuFK8O6GQ");
 
 // Регистрация
 export const handleRegister = async (e) => {
@@ -10,94 +14,106 @@ export const handleRegister = async (e) => {
     const email = document.getElementById('email').value.trim()
     const password = document.getElementById('password').value.trim()
 
-    const users = JSON.parse(localStorage.getItem('users') || '[]')
-    if (users.find(u => u.email === email)) {
-        alert('Пользователь с таким email уже существует!')
-        return
+    try {
+        // Регистрируем пользователя на сервере (получаем код)
+        const response = await authAPI.register({ username, email, password })
+        
+        // Отправляем email с кодом через EmailJS на фронтенде
+        await sendVerificationEmail(email, response.code)
+        
+        // Показываем форму верификации
+        showVerificationForm(email, response.tempUser)
+    } catch (error) {
+        alert(error.message)
     }
+}
 
-    // Генерируем код
-    const code = Math.floor(100000 + Math.random() * 900000)
-    setVerificationCode(code)
-
-    setPendingUser({ 
-        id: Date.now(), 
-        username, 
-        email, 
-        password, 
-        provider: 'email' 
+// Функция отправки email через EmailJS
+async function sendVerificationEmail(email, code) {
+    const expireTime = new Date(Date.now() + 15 * 60 * 1000).toLocaleTimeString([], { 
+        hour: "2-digit", 
+        minute: "2-digit" 
     })
 
     try {
-        await sendVerificationCode(email, code)
-        showVerificationForm(email)
+        await emailjs.send("service_hcsxffy", "template_8gmrnbu", {
+            passcode: code,
+            time: expireTime,
+            to_email: email
+        }, "DCJDcWp4UuFK8O6GQ")
+
+        console.log("✅ Email отправлен с кодом:", code)
     } catch (err) {
-        alert(err.message)
+        console.error("❌ Ошибка отправки email:", err)
+        throw new Error("Не удалось отправить письмо. Проверь настройки EmailJS.")
     }
 }
 
 // Подтверждение кода
-export const handleCodeVerification = (e) => {
+export const handleCodeVerification = async (e) => {
     e.preventDefault()
     const code = document.getElementById('code').value.trim()
-    
-    if (code === String(verificationCode)) {
-        const users = JSON.parse(localStorage.getItem('users') || '[]')
-        users.push(pendingUser)
-        localStorage.setItem('users', JSON.stringify(users))
-        localStorage.setItem('currentUser', JSON.stringify(pendingUser))
-        setCurrentUser(pendingUser)
-        setPendingUser(null)
-        setVerificationCode(null)
+    const email = document.getElementById('verify-email').value
+    const userData = JSON.parse(document.getElementById('verify-user-data').value)
+
+    try {
+        const response = await authAPI.verifyEmail(email, code, userData)
+        
+        setCurrentUser({
+            ...response.user,
+            token: response.token
+        })
+        
         showSuccessPage()
-    } else {
-        alert("Неверный код. Проверьте почту.")
+    } catch (error) {
+        alert(error.message)
     }
 }
 
 // Вход
-export const handleLogin = (e) => {
+export const handleLogin = async (e) => {
     e.preventDefault()
     const email = document.getElementById('login-email').value
     const password = document.getElementById('login-password').value
-    const users = JSON.parse(localStorage.getItem('users') || '[]')
-    const user = users.find(u => u.email === email && u.password === password)
     
-    if (user) {
-        setCurrentUser(user)
-        localStorage.setItem('currentUser', JSON.stringify(user))
+    try {
+        const response = await authAPI.login(email, password)
+        
+        setCurrentUser({
+            ...response.user,
+            token: response.token
+        })
+        
         showSuccessPage()
-    } else {
-        alert("Неверный email или пароль!")
+    } catch (error) {
+        alert(error.message)
     }
 }
 
 // Выход
 export const logout = () => {
-    localStorage.removeItem('currentUser')
-    setCurrentUser(null)
+    clearAuthState()
     window.location.reload()
+}
+
+// Google Auth функция
+export const handleGoogleAuthSuccess = async (userData) => {
+    try {
+        const response = await authAPI.googleAuth(userData)
+        
+        setCurrentUser({
+            ...response.user,
+            token: response.token
+        })
+        
+        showSuccessPage()
+    } catch (error) {
+        alert('Ошибка Google авторизации: ' + error.message)
+    }
 }
 
 // Инициализация форм авторизации
 export const setupAuthForms = () => {
-    // Ссылки между формами
-    const showLoginLink = document.getElementById('show-login')
-    if (showLoginLink) {
-        showLoginLink.addEventListener('click', (e) => {
-            e.preventDefault()
-            showLoginForm()
-        })
-    }
-
-    const showRegisterLink = document.getElementById('show-register')
-    if (showRegisterLink) {
-        showRegisterLink.addEventListener('click', (e) => {
-            e.preventDefault()
-            showRegisterForm()
-        })
-    }
-
     // Регистрация
     const registerForm = document.getElementById('register-form')
     if (registerForm) {
@@ -114,6 +130,23 @@ export const setupAuthForms = () => {
     const verifyForm = document.getElementById('verify-form')
     if (verifyForm) {
         verifyForm.addEventListener('submit', handleCodeVerification)
+    }
+
+    // Ссылки между формами
+    const showLoginLink = document.getElementById('show-login')
+    if (showLoginLink) {
+        showLoginLink.addEventListener('click', (e) => {
+            e.preventDefault()
+            showLoginForm()
+        })
+    }
+
+    const showRegisterLink = document.getElementById('show-register')
+    if (showRegisterLink) {
+        showRegisterLink.addEventListener('click', (e) => {
+            e.preventDefault()
+            showRegisterForm()
+        })
     }
 
     // Google Auth кнопки

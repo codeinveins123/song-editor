@@ -1,5 +1,4 @@
-import { setCurrentUser } from './state.js'
-import { showSuccessPage } from './pages.js'
+import { handleGoogleAuthSuccess } from './auth.js'
 
 export const initializeGoogleAuth = (containerId, callback) => {
     if (!window.google) {
@@ -33,43 +32,26 @@ export const createCustomGoogleButton = (containerId, callback) => {
         </button>
     `
     
-    window.handleCustomGoogleAuth = function() {
+    window.handleCustomGoogleAuth = async function() {
         const mockUser = { 
-            id: 'google_' + Date.now(), 
             username: 'Google User', 
-            email: 'user@gmail.com', 
-            provider: 'google' 
+            email: 'user@gmail.com',
+            picture: null,
+            googleId: 'google_' + Date.now()
         }
         
-        const users = JSON.parse(localStorage.getItem('users') || '[]')
-        if (!users.find(u => u.email === mockUser.email)) {
-            users.push(mockUser)
-        }
-        
-        localStorage.setItem('users', JSON.stringify(users))
-        localStorage.setItem('currentUser', JSON.stringify(mockUser))
-        setCurrentUser(mockUser)
-        showSuccessPage()
+        await handleGoogleAuthSuccess(mockUser)
     }
 }
 
-export const handleGoogleAuth = (response) => {
+export const handleGoogleAuth = async (response) => {
     const payload = JSON.parse(atob(response.credential.split('.')[1]))
     const userData = { 
-        id: payload.sub, 
         username: payload.name, 
         email: payload.email, 
-        picture: payload.picture, 
-        provider: 'google' 
+        picture: payload.picture,
+        googleId: payload.sub  // добавляем googleId
     }
     
-    const users = JSON.parse(localStorage.getItem('users') || '[]')
-    if (!users.find(u => u.email === userData.email)) {
-        users.push(userData)
-    }
-    
-    localStorage.setItem('users', JSON.stringify(users))
-    localStorage.setItem('currentUser', JSON.stringify(userData))
-    setCurrentUser(userData)
-    showSuccessPage()
+    await handleGoogleAuthSuccess(userData)
 }

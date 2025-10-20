@@ -1,5 +1,5 @@
 import './styles/main.css'
-import { currentUser, setCurrentUser } from './modules/state.js'
+import { setCurrentUser, getCurrentUser } from './modules/state.js'
 import { setupNavListeners } from './modules/navigation.js'
 import { showWelcomePage, showSuccessPage } from './modules/pages.js'
 import { setupAuthForms } from './modules/auth.js'
@@ -12,8 +12,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function checkAuth() {
     const savedUser = localStorage.getItem('currentUser')
-    if (savedUser) {
+    const token = localStorage.getItem('token')
+    
+    if (savedUser && token) {
         const user = JSON.parse(savedUser)
+        user.token = token
         setCurrentUser(user)
         showSuccessPage()
     } else {
