@@ -1,5 +1,5 @@
 
-const API_BASE_URL = 'http://localhost:3001/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
 
 
 // Общая функция для API запросов
@@ -66,6 +66,19 @@ export const songsAPI = {
   }),
   
   getAll: () => apiRequest('/songs'),
+  
+  getMySongs: () => apiRequest('/songs/my'),
+  
+  getById: (id) => apiRequest(`/songs/${id}`),
+  
+  update: (id, songData) => apiRequest(`/songs/${id}`, {
+    method: 'PUT',
+    body: songData
+  }),
+  
+  delete: (id) => apiRequest(`/songs/${id}`, {
+    method: 'DELETE'
+  }),
 };
 
 // Profile API

@@ -1,0 +1,121 @@
+/* Buttons */
+button {
+  transition: all 0.25s ease;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+}
+
+.btn {
+  padding: 12px 20px;
+  font-size: 16px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-full {
+  width: 100%;
+  padding: 12px 0;
+}
+
+.btn-small {
+  padding: 6px 12px;
+  font-size: 0.85em;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(124,140,251,0.25);
+}
+.btn-primary:hover {
+  background: var(--primary-600);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(124,140,251,0.35);
+}
+.btn-primary:focus-visible { outline: none; box-shadow: var(--ring); }
+
+.btn-secondary {
+  background: #f3f4f6;
+  color: var(--muted-strong);
+  border: 1px solid var(--border);
+}
+.btn-secondary:hover {
+  background: #e5e7eb;
+  transform: translateY(-1px);
+}
+.btn-secondary:focus-visible { outline: none; box-shadow: var(--ring); }
+
+.btn-success {
+  background: #48bb78;
+  color: #fff;
+}
+.btn-success:hover {
+  background: #38a169;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(72, 187, 120, 0.35);
+}
+.btn-success:focus-visible { outline: none; box-shadow: var(--ring); }
+
+.btn-outline {
+  background: transparent;
+  color: var(--muted-strong);
+  border: 1px solid var(--border);
+}
+.btn-outline:hover {
+  background: rgba(255,255,255,0.06);
+  color: #fff;
+}
+.btn-outline:focus-visible { outline: none; box-shadow: var(--ring); }
+
+/* Ghost button for hero over image */
+.btn-ghost-light {
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.6);
+  backdrop-filter: blur(2px);
+}
+.btn-ghost-light:hover {
+  background: rgba(255,255,255,0.12);
+  transform: translateY(-1px);
+}
+.btn-ghost-light:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(255,255,255,0.35); }
+
+/* Surface button (Google-like) */
+.btn-surface {
+  background: #ffffff;
+  color: #111827;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 2px rgba(16,24,40,0.06), 0 1px 3px rgba(16,24,40,0.1);
+}
+.btn-surface:hover {
+  background: #f9fafb;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(16,24,40,0.12);
+}
+.btn-surface:focus-visible { outline: none; box-shadow: var(--ring); }
+
+/* Danger */
+.btn-danger {
+  background: #ef4444;
+  color: #fff;
+}
+.btn-danger:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3);
+}
+.btn-danger:focus-visible { outline: none; box-shadow: var(--ring); }
+
+/* Disabled state */
+.btn-disabled {
+  background: #ccc !important;
+  color: #666 !important;
+  cursor: not-allowed !important;
+  opacity: 0.6;
+  pointer-events: none;
+}

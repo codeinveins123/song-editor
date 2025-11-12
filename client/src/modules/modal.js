@@ -12,7 +12,10 @@ export const showModal = (title, message, type = 'info') => {
                 <p>${message}</p>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-primary modal-confirm">OK</button>
+                <button class="btn btn-primary modal-confirm">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-right:6px"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  OK
+                </button>
             </div>
         </div>
     `;
@@ -50,8 +53,14 @@ export const showConfirmModal = (title, message) => {
                     <p>${message}</p>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-secondary modal-cancel">Отмена</button>
-                    <button class="btn btn-primary modal-confirm">OK</button>
+                    <button class="btn btn-secondary modal-cancel">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-right:6px"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                      Отмена
+                    </button>
+                    <button class="btn btn-primary modal-confirm">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-right:6px"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                      OK
+                    </button>
                 </div>
             </div>
         `;

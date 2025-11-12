@@ -47,6 +47,8 @@ async function initDatabase() {
         provider VARCHAR(20) DEFAULT 'email',
         picture_url TEXT,
         google_id VARCHAR(100),
+        bio TEXT,
+        notifications BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -57,10 +59,17 @@ async function initDatabase() {
         id SERIAL PRIMARY KEY,
         title VARCHAR(200) NOT NULL,
         artist VARCHAR(100) NOT NULL,
+        genre VARCHAR(50),
+        rhythm VARCHAR(100),
+        description TEXT,
         lyrics TEXT NOT NULL,
+        content TEXT,
         chords TEXT,
+        is_public BOOLEAN DEFAULT TRUE,
+        allow_comments BOOLEAN DEFAULT TRUE,
         created_by INTEGER REFERENCES users(id),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
@@ -75,6 +84,23 @@ async function initDatabase() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+
+    // Добавляем колонки если их нет
+    try {
+      await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT');
+      await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS notifications BOOLEAN DEFAULT FALSE');
+      
+      // Добавляем новые колонки в songs
+      await pool.query('ALTER TABLE songs ADD COLUMN IF NOT EXISTS genre VARCHAR(50)');
+      await pool.query('ALTER TABLE songs ADD COLUMN IF NOT EXISTS rhythm VARCHAR(100)');
+      await pool.query('ALTER TABLE songs ADD COLUMN IF NOT EXISTS description TEXT');
+      await pool.query('ALTER TABLE songs ADD COLUMN IF NOT EXISTS content TEXT');
+      await pool.query('ALTER TABLE songs ADD COLUMN IF NOT EXISTS is_public BOOLEAN DEFAULT TRUE');
+      await pool.query('ALTER TABLE songs ADD COLUMN IF NOT EXISTS allow_comments BOOLEAN DEFAULT TRUE');
+      await pool.query('ALTER TABLE songs ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
+    } catch (error) {
+      console.log('Колонки уже существуют или ошибка добавления:', error.message);
+    }
 
     console.log('✅ Таблицы базы данных созданы');
   } catch (error) {
@@ -104,6 +130,11 @@ function authenticateToken(req, res, next) {
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { username, email, password } = req.body;
+
+    // Валидация данных
+    if (!username || !email || !password) {
+      return res.status(400).json({ error: 'Все поля обязательны' });
+    }
 
     // Проверяем, есть ли пользователь
     const userExists = await pool.query(
@@ -135,7 +166,7 @@ app.post('/api/auth/register', async (req, res) => {
 
   } catch (error) {
     console.error('Ошибка регистрации:', error);
-    res.status(500).json({ error: 'Ошибка сервера' });
+    res.status(500).json({ error: 'Ошибка сервера: ' + error.message });
   }
 });
 
@@ -144,6 +175,8 @@ app.post('/api/auth/verify-email', async (req, res) => {
   try {
     const { email, code, userData } = req.body;
 
+    console.log('Проверка email:', email, 'код:', code);
+
     // Проверяем код
     const codeResult = await pool.query(
       'SELECT * FROM verification_codes WHERE email = $1 AND code = $2 AND used = FALSE AND expires_at > NOW()',
@@ -151,6 +184,7 @@ app.post('/api/auth/verify-email', async (req, res) => {
     );
 
     if (codeResult.rows.length === 0) {
+      console.log('Неверный или просроченный код');
       return res.status(400).json({ error: 'Неверный или просроченный код' });
     }
 
@@ -177,15 +211,21 @@ app.post('/api/auth/verify-email', async (req, res) => {
       { expiresIn: '7d' }
     );
 
+    const newUser = {
+      ...userResult.rows[0],
+      bio: null,
+      notifications: false
+    };
+    
     res.json({
       message: 'Email успешно подтвержден',
-      user: userResult.rows[0],
+      user: newUser,
       token
     });
 
   } catch (error) {
     console.error('Ошибка верификации email:', error);
-    res.status(500).json({ error: 'Ошибка сервера' });
+    res.status(500).json({ error: 'Ошибка сервера: ' + error.message });
   }
 });
 
@@ -227,6 +267,8 @@ app.post('/api/auth/login', async (req, res) => {
         email: user.email,
         provider: user.provider,
         picture_url: user.picture_url,
+        bio: user.bio || null,
+        notifications: user.notifications || false,
         created_at: user.created_at
       },
       token
@@ -283,6 +325,8 @@ app.post('/api/auth/google', async (req, res) => {
         email: user.email,
         provider: user.provider,
         picture_url: user.picture_url,
+        bio: user.bio || null,
+        notifications: user.notifications || false,
         created_at: user.created_at
       },
       token
@@ -298,7 +342,7 @@ app.post('/api/auth/google', async (req, res) => {
 app.get('/api/auth/profile', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT id, username, email, provider, picture_url, created_at FROM users WHERE id = $1',
+      'SELECT id, username, email, provider, picture_url, bio, notifications, created_at FROM users WHERE id = $1',
       [req.user.userId]
     );
 
@@ -309,20 +353,22 @@ app.get('/api/auth/profile', authenticateToken, async (req, res) => {
     res.json({ user: result.rows[0] });
   } catch (error) {
     console.error('Ошибка получения профиля:', error);
-    res.status(500).json({ error: 'Ошибка сервера' });
+    res.status(500).json({ error: 'Ошибка сервера: ' + error.message });
   }
 });
 
 // 🎵 Добавить песню
 app.post('/api/songs', authenticateToken, async (req, res) => {
   try {
-    const { title, artist, lyrics, chords } = req.body;
+    const { title, artist, genre, rhythm, description, lyrics, content, chords, is_public, allow_comments } = req.body;
     const userId = req.user.userId;
 
+    console.log('🎵 Добавление песни:', { title, artist, genre, rhythm, description });
+
     const result = await pool.query(
-      `INSERT INTO songs (title, artist, lyrics, chords, created_by) 
-       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [title, artist, lyrics, chords, userId]
+      `INSERT INTO songs (title, artist, genre, rhythm, description, lyrics, content, chords, is_public, allow_comments, created_by) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
+      [title, artist, genre || null, rhythm || null, description || null, lyrics || content, content || lyrics, chords || null, is_public !== false, allow_comments !== false, userId]
     );
 
     res.json({
@@ -331,24 +377,139 @@ app.post('/api/songs', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Ошибка добавления песни:', error);
-    res.status(500).json({ error: 'Ошибка сервера' });
+    res.status(500).json({ error: 'Ошибка сервера: ' + error.message });
   }
 });
 
 // 🎵 Получить все песни
 app.get('/api/songs', async (req, res) => {
   try {
+    // Получаем все публичные песни или песни текущего пользователя
     const result = await pool.query(`
-      SELECT s.*, u.username as author 
+      SELECT s.id, s.title, s.artist, s.genre, s.rhythm, s.description, s.lyrics, s.content, s.chords, 
+             s.is_public, s.allow_comments, s.created_at, s.updated_at,
+             u.username as author
       FROM songs s 
       LEFT JOIN users u ON s.created_by = u.id 
+      WHERE s.is_public = TRUE
       ORDER BY s.created_at DESC
     `);
 
     res.json({ songs: result.rows });
   } catch (error) {
     console.error('Ошибка получения песен:', error);
-    res.status(500).json({ error: 'Ошибка сервера' });
+    res.status(500).json({ error: 'Ошибка сервера: ' + error.message });
+  }
+});
+
+// 🎵 Получить мои песни (для авторизованного пользователя)
+app.get('/api/songs/my', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    
+    const result = await pool.query(`
+      SELECT s.*, u.username as author 
+      FROM songs s 
+      LEFT JOIN users u ON s.created_by = u.id 
+      WHERE s.created_by = $1
+      ORDER BY s.created_at DESC
+    `, [userId]);
+
+    res.json({ songs: result.rows });
+  } catch (error) {
+    console.error('Ошибка получения моих песен:', error);
+    res.status(500).json({ error: 'Ошибка сервера: ' + error.message });
+  }
+});
+
+// 🎵 Получить одну песню
+app.get('/api/songs/:id', async (req, res) => {
+  try {
+    const songId = req.params.id;
+    
+    const result = await pool.query(`
+      SELECT s.*, u.username as author, u.id as author_id
+      FROM songs s 
+      LEFT JOIN users u ON s.created_by = u.id 
+      WHERE s.id = $1
+    `, [songId]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Песня не найдена' });
+    }
+
+    res.json({ song: result.rows[0] });
+  } catch (error) {
+    console.error('Ошибка получения песни:', error);
+    res.status(500).json({ error: 'Ошибка сервера: ' + error.message });
+  }
+});
+
+// 🎵 Обновить песню
+app.put('/api/songs/:id', authenticateToken, async (req, res) => {
+  try {
+    const songId = req.params.id;
+    const userId = req.user.userId;
+    const { title, artist, genre, rhythm, description, lyrics, content, chords, is_public, allow_comments } = req.body;
+
+    // Проверяем, что песня принадлежит пользователю
+    const checkResult = await pool.query(
+      'SELECT created_by FROM songs WHERE id = $1',
+      [songId]
+    );
+
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Песня не найдена' });
+    }
+
+    if (checkResult.rows[0].created_by !== userId) {
+      return res.status(403).json({ error: 'У вас нет прав на редактирование этой песни' });
+    }
+
+    const result = await pool.query(
+      `UPDATE songs SET title = $1, artist = $2, genre = $3, rhythm = $4, description = $5, 
+              lyrics = $6, content = $7, chords = $8, is_public = $9, allow_comments = $10, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $11 
+       RETURNING *`,
+      [title, artist, genre || null, rhythm || null, description || null, lyrics || content, content || lyrics, chords || null, is_public !== false, allow_comments !== false, songId]
+    );
+
+    res.json({
+      message: 'Песня обновлена',
+      song: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Ошибка обновления песни:', error);
+    res.status(500).json({ error: 'Ошибка сервера: ' + error.message });
+  }
+});
+
+// 🎵 Удалить песню
+app.delete('/api/songs/:id', authenticateToken, async (req, res) => {
+  try {
+    const songId = req.params.id;
+    const userId = req.user.userId;
+
+    // Проверяем, что песня принадлежит пользователю
+    const checkResult = await pool.query(
+      'SELECT created_by FROM songs WHERE id = $1',
+      [songId]
+    );
+
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Песня не найдена' });
+    }
+
+    if (checkResult.rows[0].created_by !== userId) {
+      return res.status(403).json({ error: 'У вас нет прав на удаление этой песни' });
+    }
+
+    await pool.query('DELETE FROM songs WHERE id = $1', [songId]);
+
+    res.json({ message: 'Песня удалена' });
+  } catch (error) {
+    console.error('Ошибка удаления песни:', error);
+    res.status(500).json({ error: 'Ошибка сервера: ' + error.message });
   }
 });
 
@@ -418,30 +579,37 @@ app.put('/api/auth/profile', authenticateToken, async (req, res) => {
     console.log('📝 Данные:', { username, bio, notifications });
 
     // Получаем текущего пользователя
-    const currentUser = await pool.query(
-      'SELECT provider FROM users WHERE id = $1',
+    const currentUserResult = await pool.query(
+      'SELECT provider, username FROM users WHERE id = $1',
       [userId]
     );
 
-    if (currentUser.rows.length === 0) {
+    if (currentUserResult.rows.length === 0) {
       return res.status(404).json({ error: 'Пользователь не найден' });
     }
 
-    const userProvider = currentUser.rows[0].provider;
+    const userProvider = currentUserResult.rows[0].provider;
+    const currentUsername = currentUserResult.rows[0].username;
     let updateQuery, queryParams;
 
     if (userProvider === 'google') {
-      // Для Google - только bio и notifications
+      // Для Google - только bio и notifications (не обновляем username и picture_url)
       updateQuery = `UPDATE users SET bio = $1, notifications = $2 WHERE id = $3 
                      RETURNING id, username, email, provider, picture_url, bio, notifications, created_at`;
       queryParams = [bio, notifications, userId];
     } else {
-      // Для email - username, bio и notifications
-      // Проверяем что username не null
-      const safeUsername = username || currentUser.rows[0].username;
-      updateQuery = `UPDATE users SET username = $1, bio = $2, notifications = $3 WHERE id = $4 
-                     RETURNING id, username, email, provider, picture_url, bio, notifications, created_at`;
-      queryParams = [safeUsername, bio, notifications, userId];
+      // Для email - обновляем username только если он предоставлен
+      if (username !== undefined && username !== null && username.trim() !== '') {
+        // Обновляем username, bio и notifications
+        updateQuery = `UPDATE users SET username = $1, bio = $2, notifications = $3 WHERE id = $4 
+                       RETURNING id, username, email, provider, picture_url, bio, notifications, created_at`;
+        queryParams = [username.trim(), bio, notifications, userId];
+      } else {
+        // Только bio и notifications
+        updateQuery = `UPDATE users SET bio = $1, notifications = $2 WHERE id = $3 
+                       RETURNING id, username, email, provider, picture_url, bio, notifications, created_at`;
+        queryParams = [bio, notifications, userId];
+      }
     }
 
     const result = await pool.query(updateQuery, queryParams);

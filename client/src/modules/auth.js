@@ -14,17 +14,25 @@ export const handleRegister = async (e) => {
     const email = document.getElementById('email').value.trim()
     const password = document.getElementById('password').value.trim()
 
+    console.log('📝 Начало регистрации:', { username, email, password })
+
     try {
         // Регистрируем пользователя на сервере (получаем код)
+        console.log('🔄 Отправка запроса на сервер...')
         const response = await authAPI.register({ username, email, password })
+        console.log('✅ Ответ сервера:', response)
         
         // Отправляем email с кодом через EmailJS на фронтенде
+        console.log('📧 Отправка email...')
         await sendVerificationEmail(email, response.code)
+        console.log('✅ Email отправлен')
         
         // Показываем форму верификации
+        console.log('📝 Показ формы верификации')
         showVerificationForm(email, response.tempUser)
     } catch (error) {
-        alert(error.message)
+        console.error('❌ Ошибка регистрации:', error)
+        alert('Ошибка: ' + error.message)
     }
 }
 
@@ -56,17 +64,23 @@ export const handleCodeVerification = async (e) => {
     const email = document.getElementById('verify-email').value
     const userData = JSON.parse(document.getElementById('verify-user-data').value)
 
+    console.log('🔐 Проверка кода:', { email, code })
+
     try {
+        console.log('🔄 Отправка кода на сервер...')
         const response = await authAPI.verifyEmail(email, code, userData)
+        console.log('✅ Код подтвержден:', response)
         
         setCurrentUser({
             ...response.user,
             token: response.token
         })
         
+        console.log('✅ Пользователь зарегистрирован')
         showSuccessPage()
     } catch (error) {
-        alert(error.message)
+        console.error('❌ Ошибка верификации:', error)
+        alert('Ошибка: ' + error.message)
     }
 }
 
@@ -76,8 +90,11 @@ export const handleLogin = async (e) => {
     const email = document.getElementById('login-email').value
     const password = document.getElementById('login-password').value
     
+    console.log('🔑 Попытка входа:', { email })
+    
     try {
         const response = await authAPI.login(email, password)
+        console.log('✅ Вход выполнен:', response)
         
         setCurrentUser({
             ...response.user,
@@ -86,7 +103,8 @@ export const handleLogin = async (e) => {
         
         showSuccessPage()
     } catch (error) {
-        alert(error.message)
+        console.error('❌ Ошибка входа:', error)
+        alert('Ошибка входа: ' + error.message)
     }
 }
 
