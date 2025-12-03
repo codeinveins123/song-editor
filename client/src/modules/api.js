@@ -81,6 +81,53 @@ export const songsAPI = {
   }),
 };
 
+// Users API (public profiles and ratings)
+export const usersAPI = {
+  getPublicByUsername: (username) => apiRequest(`/users/public/${encodeURIComponent(username)}`),
+  rateUser: (userId, value) => apiRequest(`/users/${userId}/rate`, {
+    method: 'PUT',
+    body: { value }
+  })
+};
+
+// Media API
+export const mediaAPI = {
+  uploadImage: (file) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    return apiRequest('/upload/image', {
+      method: 'POST',
+      body: formData,
+      headers: {} // Не устанавливаем Content-Type для FormData
+    });
+  },
+  
+  getYouTubeInfo: (url) => apiRequest('/video/youtube-info', {
+    method: 'POST',
+    body: { url }
+  })
+};
+
+// Admin API
+export const adminAPI = {
+  // User management
+  getUsers: () => apiRequest('/admin/users'),
+  blockUser: (userId, blocked) => apiRequest(`/admin/users/${userId}/block`, {
+    method: 'PUT',
+    body: { blocked }
+  }),
+  
+  // Song management
+  getAllSongs: () => apiRequest('/admin/songs'),
+  verifySong: (songId, verified) => apiRequest(`/admin/songs/${songId}/verify`, {
+    method: 'PUT',
+    body: { verified }
+  }),
+  deleteSong: (songId) => apiRequest(`/admin/songs/${songId}`, {
+    method: 'DELETE'
+  })
+};
+
 // Profile API
 export const profileAPI = {
   changePassword: (data) => apiRequest('/auth/change-password', {

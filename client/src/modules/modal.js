@@ -1,7 +1,16 @@
 // modal.js - Утилиты для модальных окон
 export const showModal = (title, message, type = 'info') => {
+    // Удаляем существующие модальные окна
+    const existingModals = document.querySelectorAll('.modal-overlay');
+    existingModals.forEach(modal => {
+        if (modal.parentNode) {
+            modal.parentNode.removeChild(modal);
+        }
+    });
+
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
+    modal.style.display = 'flex';
     modal.innerHTML = `
         <div class="modal-content modal-${type}">
             <div class="modal-header">
@@ -21,7 +30,9 @@ export const showModal = (title, message, type = 'info') => {
     `;
 
     const closeModal = () => {
-        document.body.removeChild(modal);
+        if (modal.parentNode) {
+            modal.parentNode.removeChild(modal);
+        }
     };
 
     modal.querySelector('.modal-close').addEventListener('click', closeModal);
@@ -30,7 +41,11 @@ export const showModal = (title, message, type = 'info') => {
         if (e.target === modal) closeModal();
     });
 
+    // Добавляем в body
     document.body.appendChild(modal);
+    
+    // Фокус на модальное окно
+    modal.querySelector('.modal-confirm').focus();
 
     // Автозакрытие для info сообщений через 3 секунды
     if (type === 'info') {
@@ -42,8 +57,17 @@ export const showModal = (title, message, type = 'info') => {
 
 export const showConfirmModal = (title, message) => {
     return new Promise((resolve) => {
+        // Удаляем существующие модальные окна
+        const existingModals = document.querySelectorAll('.modal-overlay');
+        existingModals.forEach(modal => {
+            if (modal.parentNode) {
+                modal.parentNode.removeChild(modal);
+            }
+        });
+
         const modal = document.createElement('div');
         modal.className = 'modal-overlay';
+        modal.style.display = 'flex';
         modal.innerHTML = `
             <div class="modal-content modal-confirm">
                 <div class="modal-header">
@@ -66,7 +90,9 @@ export const showConfirmModal = (title, message) => {
         `;
 
         const closeModal = () => {
-            document.body.removeChild(modal);
+            if (modal.parentNode) {
+                modal.parentNode.removeChild(modal);
+            }
         };
 
         modal.querySelector('.modal-cancel').addEventListener('click', () => {
@@ -86,7 +112,11 @@ export const showConfirmModal = (title, message) => {
             }
         });
 
+        // Добавляем в body
         document.body.appendChild(modal);
+        
+        // Фокус на кнопку подтверждения
+        modal.querySelector('.modal-confirm').focus();
     });
 };
 
@@ -94,8 +124,17 @@ export const showPromptModal = (title, placeholder = '', defaultValue = '', opti
     return new Promise((resolve) => {
         const { type = 'text', description = '' } = options;
         
+        // Удаляем существующие модальные окна
+        const existingModals = document.querySelectorAll('.modal-overlay');
+        existingModals.forEach(modal => {
+            if (modal.parentNode) {
+                modal.parentNode.removeChild(modal);
+            }
+        });
+        
         const modal = document.createElement('div');
         modal.className = 'modal-overlay';
+        modal.style.display = 'flex';
         modal.innerHTML = `
             <div class="modal-content modal-prompt large-modal">
                 <div class="modal-header">
@@ -118,12 +157,10 @@ export const showPromptModal = (title, placeholder = '', defaultValue = '', opti
         `;
 
         const input = modal.querySelector('.modal-input');
-        const closeModal = () => document.body.removeChild(modal);
-
-        const confirm = () => {
-            const value = input.value.trim();
-            closeModal();
-            resolve(value);
+        const closeModal = () => {
+            if (modal.parentNode) {
+                modal.parentNode.removeChild(modal);
+            }
         };
 
         modal.querySelector('.modal-cancel').addEventListener('click', () => {
@@ -131,10 +168,9 @@ export const showPromptModal = (title, placeholder = '', defaultValue = '', opti
             resolve(null);
         });
 
-        modal.querySelector('.modal-confirm').addEventListener('click', confirm);
-        
-        input.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') confirm();
+        modal.querySelector('.modal-confirm').addEventListener('click', () => {
+            closeModal();
+            resolve(input.value);
         });
 
         modal.addEventListener('click', (e) => {
@@ -144,9 +180,23 @@ export const showPromptModal = (title, placeholder = '', defaultValue = '', opti
             }
         });
 
+        // Добавляем в body
         document.body.appendChild(modal);
+        
+        // Фокус на input
         input.focus();
         input.select();
+        
+        // Enter для подтверждения
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                closeModal();
+                resolve(input.value);
+            } else if (e.key === 'Escape') {
+                closeModal();
+                resolve(null);
+            }
+        });
     });
 };
 

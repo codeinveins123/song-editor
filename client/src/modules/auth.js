@@ -2,6 +2,7 @@ import { setCurrentUser, clearAuthState } from './state.js'
 import { showVerificationForm, showSuccessPage, showLoginForm, showRegisterForm } from './pages.js'
 import { initializeGoogleAuth, handleGoogleAuth } from './googleAuth.js'
 import { authAPI } from './api.js'
+import { showModal } from './modal.js'
 import emailjs from '@emailjs/browser'
 
 // Инициализация EmailJS
@@ -14,25 +15,27 @@ export const handleRegister = async (e) => {
     const email = document.getElementById('email').value.trim()
     const password = document.getElementById('password').value.trim()
 
-    console.log('📝 Начало регистрации:', { username, email, password })
+    console.log('📝 Начало регистрации:', { username, email })
 
     try {
         // Регистрируем пользователя на сервере (получаем код)
         console.log('🔄 Отправка запроса на сервер...')
         const response = await authAPI.register({ username, email, password })
-        console.log('✅ Ответ сервера:', response)
+        console.log('Ответ сервера:', response)
         
         // Отправляем email с кодом через EmailJS на фронтенде
-        console.log('📧 Отправка email...')
+        console.log('Отправка email...')
         await sendVerificationEmail(email, response.code)
-        console.log('✅ Email отправлен')
+        console.log('Email отправлен')
         
-        // Показываем форму верификации
-        console.log('📝 Показ формы верификации')
+        // Показываем форму верификации (пароль храним временно в памяти)
+        console.log('Показ формы верификации')
+        // Временно сохраняем пароль в памяти (не в sessionStorage)
+        window.tempRegistrationPassword = password
         showVerificationForm(email, response.tempUser)
     } catch (error) {
-        console.error('❌ Ошибка регистрации:', error)
-        alert('Ошибка: ' + error.message)
+        console.error('Ошибка регистрации:', error)
+        showModal('Ошибка регистрации', error.message, 'error')
     }
 }
 
@@ -63,13 +66,25 @@ export const handleCodeVerification = async (e) => {
     const code = document.getElementById('code').value.trim()
     const email = document.getElementById('verify-email').value
     const userData = JSON.parse(document.getElementById('verify-user-data').value)
+    
+    // Получаем пароль из временной памяти
+    const tempPassword = window.tempRegistrationPassword
+    
+    if (!tempPassword) {
+        showModal('Ошибка', 'Сессия истекла. Пожалуйста, пройдите регистрацию заново.', 'error')
+        showRegisterForm()
+        return
+    }
 
     console.log('🔐 Проверка кода:', { email, code })
 
     try {
         console.log('🔄 Отправка кода на сервер...')
-        const response = await authAPI.verifyEmail(email, code, userData)
+        const response = await authAPI.verifyEmail(email, code, { ...userData, password: tempPassword })
         console.log('✅ Код подтвержден:', response)
+        
+        // Очищаем временный пароль из памяти
+        delete window.tempRegistrationPassword
         
         setCurrentUser({
             ...response.user,
@@ -80,7 +95,7 @@ export const handleCodeVerification = async (e) => {
         showSuccessPage()
     } catch (error) {
         console.error('❌ Ошибка верификации:', error)
-        alert('Ошибка: ' + error.message)
+        showModal('Ошибка верификации', error.message, 'error')
     }
 }
 
@@ -104,12 +119,14 @@ export const handleLogin = async (e) => {
         showSuccessPage()
     } catch (error) {
         console.error('❌ Ошибка входа:', error)
-        alert('Ошибка входа: ' + error.message)
+        showModal('Ошибка входа', error.message, 'error')
     }
 }
 
 // Выход
 export const logout = () => {
+    // Очищаем временные данные из памяти
+    delete window.tempRegistrationPassword
     clearAuthState()
     window.location.reload()
 }
@@ -126,7 +143,7 @@ export const handleGoogleAuthSuccess = async (userData) => {
         
         showSuccessPage()
     } catch (error) {
-        alert('Ошибка Google авторизации: ' + error.message)
+        showModal('Ошибка Google авторизации', error.message, 'error')
     }
 }
 
