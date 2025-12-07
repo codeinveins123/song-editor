@@ -1118,7 +1118,7 @@ async function handleDeleteAccount() {
     if (!confirmed) return;
 
     try {
-        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://song-editor.onrender.com/api';
         const response = await fetch(`${API_BASE_URL}/auth/profile`, {
             method: 'DELETE',
             headers: {
@@ -1152,7 +1152,7 @@ async function handleDeleteAccount() {
 
 async function checkDeletionStatus() {
     try {
-        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://song-editor.onrender.com/api';
         const response = await fetch(`${API_BASE_URL}/auth/profile/deletion-status`, {
             headers: {
                 'Authorization': `Bearer ${getToken()}`
@@ -1213,7 +1213,7 @@ function updateDeleteStatusUI(status) {
 
 async function handleCancelDelete() {
     try {
-        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://song-editor.onrender.com/api';
         const response = await fetch(`${API_BASE_URL}/auth/profile/cancel-delete`, {
             method: 'POST',
             headers: {
@@ -1242,7 +1242,7 @@ async function handleCancelDelete() {
 
 async function loadCurrentUser() {
     try {
-        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://song-editor.onrender.com/api';
         const response = await fetch(`${API_BASE_URL}/auth/profile`, {
             headers: {
                 'Authorization': `Bearer ${getToken()}`

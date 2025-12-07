@@ -29,7 +29,7 @@ async function checkAuth() {
         try {
             // Проверяем токен на сервере и получаем актуальные данные пользователя
             console.log('🔄 Проверка токена на сервере...')
-            const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
+            const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://song-editor.onrender.com/api';
             const response = await fetch(`${API_BASE_URL}/auth/profile`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -343,7 +343,7 @@ function showForcefulModal(title, content) {
 // Функция восстановления аккаунта
 async function restoreAccount() {
     try {
-        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://song-editor.onrender.com/api';
         const token = localStorage.getItem('token');
         
         const response = await fetch(`${API_BASE_URL}/auth/profile/cancel-delete`, {
