@@ -20,10 +20,10 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 const allowedOrigins = [
   'http://localhost:5173',
   'http://127.0.0.1:5173',
-  'https://your-netlify-app.netlify.app' // Замените на ваш домен Netlify
+  'https://song-editor.netlify.app/'
 ];
-
-app.use(cors({
+app.use(cors());
+/* app.use(cors({
   origin: function(origin, callback) {
     // Разрешаем запросы без origin (например, из мобильных приложений)
     if (!origin) return callback(null, true);
@@ -38,7 +38,7 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   exposedHeaders: ['Content-Range', 'X-Content-Range']
-}));
+})); */
 
 // Обработка предварительных запросов CORS
 app.options('*', cors());
@@ -606,7 +606,8 @@ app.get('/auth/google/callback', (req, res) => {
   }
   
   // Обмениваем code на токен и получаем данные пользователя
-  fetch(`http://localhost:3001/api/auth/google/exchange?code=${encodeURIComponent(code)}`)
+ /*  fetch(`http://localhost:3001/api/auth/google/exchange?code=${encodeURIComponent(code)}`) */
+ fetch(`https://song-editor.onrender.com/api/auth/google/exchange?code=${encodeURIComponent(code)}`)
     .then(response => response.json())
     .then(data => {
       if (data.error) {
@@ -656,7 +657,7 @@ app.get('/api/auth/google/exchange', async (req, res) => {
         client_secret: process.env.GOOGLE_CLIENT_SECRET,
         code: code,
         grant_type: 'authorization_code',
-        redirect_uri: `${process.env.CLIENT_URL || 'http://localhost:5173'}/auth/google/callback`
+        /* redirect_uri: `${process.env.CLIENT_URL || 'http://localhost:5173'}/auth/google/callback` */
       })
     });
     
