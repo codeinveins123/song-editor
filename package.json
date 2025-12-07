@@ -1,5 +1,5 @@
 {
-  "name": "my-vanilla-app",
+  "name": "song-editor-root",
   "private": true,
   "scripts": {
     "start": "cd server && node server.js",
@@ -15,29 +15,3 @@
     "dotenv": "^16.3.1"
   }
 }
-
-
-
-
-
-
-
-
-
-
-/* {
-  "name": "my-vanilla-app-root",
-  "private": true,
-  "scripts": {
-    "dev": "concurrently -n server,client -c blue,green \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
-    "dev:server": "npm --prefix server run dev",
-    "dev:client": "npm --prefix client run dev"
-  },
-  "devDependencies": {
-    "concurrently": "^8.2.2"
-  },
-  "dependencies": {
-    "node-cron": "^4.2.1"
-  }
-}
- */
