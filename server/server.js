@@ -17,12 +17,31 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Middleware CORS
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'https://your-netlify-app.netlify.app' // Замените на ваш домен Netlify
+];
+
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+  origin: function(origin, callback) {
+    // Разрешаем запросы без origin (например, из мобильных приложений)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'Доступ с этого источника не разрешен';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range']
 }));
+
+// Обработка предварительных запросов CORS
+app.options('*', cors());
 
 // CSP Headers for security
 app.use((req, res, next) => {
@@ -58,13 +77,27 @@ app.get('/favicon.ico', (req, res) => {
   res.status(204).end();
 });
 
-// Подключение к PostgreSQL
+// Подключение к PostgreSQL (Supabase)
 const pool = new Pool({
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  database: process.env.DB_NAME,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false // Для разработки, в продакшене используйте сертификат
+  }
+});
+
+// Обработка ошибок подключения к БД
+pool.on('error', (err) => {
+  console.error('Unexpected error on idle client', err);
+  process.exit(-1);
+});
+
+// Проверка подключения к БД
+pool.query('SELECT NOW()', (err) => {
+  if (err) {
+    console.error('❌ Ошибка подключения к базе данных:', err);
+  } else {
+    console.log('✅ Подключение к базе данных установлено');
+  }
 });
 
 // Создание таблиц при запуске
