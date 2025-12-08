@@ -1780,152 +1780,448 @@ function insertRhythmPattern(pattern) {
 function showMediaModal(type) {
     const modal = document.getElementById('media-modal');
     const title = document.getElementById('media-modal-title');
+    const mediaTypeLabel = document.getElementById('media-type-label');
     
-    title.textContent = 
-        type === 'image' ? 'Добавить изображение' :
-        type === 'video' ? 'Добавить видео' :
-        'Добавить аудио';
+    // Set modal title and labels based on media type
+    const typeLabels = {
+        'image': { title: 'Добавить изображение', type: 'Изображение' },
+        'video': { title: 'Добавить видео', type: 'Видео' },
+        'audio': { title: 'Добавить аудио', type: 'Аудио' }
+    };
     
-    modal.style.display = 'flex';
+    const { title: modalTitle, type: typeName } = typeLabels[type] || { title: 'Добавить медиа', type: 'Медиа' };
+    
+    title.textContent = modalTitle;
+    mediaTypeLabel.textContent = typeName;
+    
+    // Reset form and previews
+    const form = document.getElementById('media-form');
+    if (form) form.reset();
+    
+    // Clear previews
+    const previews = ['url-preview', 'file-preview', 'file-info'];
+    previews.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = '';
+    });
+    
+    // Set active tab to URL by default
+    const tabUrl = document.getElementById('tab-url');
+    const tabFile = document.getElementById('tab-file');
+    const urlUpload = document.getElementById('url-upload');
+    const fileUpload = document.getElementById('file-upload');
+    
+    if (tabUrl && tabFile && urlUpload && fileUpload) {
+        tabUrl.classList.add('active');
+        tabFile.classList.remove('active');
+        urlUpload.style.display = 'block';
+        fileUpload.style.display = 'none';
+    }
+    
+    // Set media type
     modal.dataset.mediaType = type;
     
-    document.getElementById('media-url').value = '';
-    document.getElementById('media-file').value = '';
-    document.getElementById('url-preview').innerHTML = '';
-    document.getElementById('file-info').textContent = '';
+    // Show modal with animation
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('show'), 10);
+    
+    // Focus on URL input
+    const urlInput = document.getElementById('media-url');
+    if (urlInput) setTimeout(() => urlInput.focus(), 100);
+}
+
+function closeMediaModal() {
+    const modal = document.getElementById('media-modal');
+    if (modal) {
+        modal.classList.remove('show');
+        setTimeout(() => {
+            modal.style.display = 'none';
+        }, 200);
+    }
+}
+
+function showError(message) {
+    const errorEl = document.getElementById('media-error');
+    if (errorEl) {
+        errorEl.textContent = message;
+        errorEl.style.display = message ? 'block' : 'none';
+    }
 }
 
 function setupModalHandlers() {
     const mediaModal = document.getElementById('media-modal');
-    
     if (!mediaModal) return;
-    
-    mediaModal.querySelector('.modal-close').addEventListener('click', () => {
-        mediaModal.style.display = 'none';
-    });
+
+    // Close modal handlers
+    const closeBtn = mediaModal.querySelector('.modal-close');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeMediaModal);
+    }
     
     mediaModal.addEventListener('click', (e) => {
         if (e.target === mediaModal) {
-            mediaModal.style.display = 'none';
+            closeMediaModal();
         }
     });
-    
-    document.querySelectorAll('input[name="media-type"]').forEach(radio => {
-        radio.addEventListener('change', (e) => {
-            const isUrl = e.target.value === 'url';
-            document.getElementById('url-upload').style.display = isUrl ? 'block' : 'none';
-            document.getElementById('file-upload').style.display = isUrl ? 'none' : 'block';
+
+    // Tab switching
+    const tabUrl = document.getElementById('tab-url');
+    const tabFile = document.getElementById('tab-file');
+    const urlUpload = document.getElementById('url-upload');
+    const fileUpload = document.getElementById('file-upload');
+
+    if (tabUrl && tabFile) {
+        tabUrl.addEventListener('click', (e) => {
+            e.preventDefault();
+            tabUrl.classList.add('active');
+            tabFile.classList.remove('active');
+            if (urlUpload) urlUpload.style.display = 'block';
+            if (fileUpload) fileUpload.style.display = 'none';
+            const urlInput = document.getElementById('media-url');
+            if (urlInput) setTimeout(() => urlInput.focus(), 10);
+            showError('');
         });
-    });
-    
-    document.getElementById('media-url').addEventListener('input', (e) => {
-        const url = e.target.value;
-        const preview = document.getElementById('url-preview');
+
+        tabFile.addEventListener('click', (e) => {
+            e.preventDefault();
+            tabFile.classList.add('active');
+            tabUrl.classList.remove('active');
+            if (fileUpload) fileUpload.style.display = 'block';
+            if (urlUpload) urlUpload.style.display = 'none';
+            showError('');
+        });
+    }
+
+    // URL input handling with preview
+    const urlInput = document.getElementById('media-url');
+    if (urlInput) {
+        let previewTimeout;
         
-        if (url && (url.match(/\.(jpeg|jpg|gif|png)$/) || url.includes('youtube') || url.includes('vimeo'))) {
-            const mediaType = document.getElementById('media-modal').dataset.mediaType;
+        urlInput.addEventListener('input', (e) => {
+            clearTimeout(previewTimeout);
+            const url = e.target.value.trim();
+            const preview = document.getElementById('url-preview');
             
-            if (mediaType === 'image') {
-                preview.innerHTML = `<img src="${url}" alt="Preview" style="max-width: 100%; max-height: 150px;">`;
-            } else if (mediaType === 'video') {
-                preview.innerHTML = `<div class="video-preview">Видео ссылка: ${url}</div>`;
-            } else {
-                preview.innerHTML = `<div class="audio-preview">Аудио ссылка: ${url}</div>`;
+            if (!url) {
+                if (preview) preview.innerHTML = '';
+                showError('');
+                return;
             }
-        } else {
-            preview.innerHTML = '';
-        }
-    });
+            
+            // Validate URL format
+            try {
+                new URL(url);
+            } catch {
+                if (preview) preview.innerHTML = '';
+                showError('Пожалуйста, введите корректный URL');
+                return;
+            }
+            
+            // Show loading state
+            if (preview) {
+                preview.innerHTML = '<div class="preview-loading">Загрузка предпросмотра...</div>';
+            }
+            
+            // Debounce the preview
+            previewTimeout = setTimeout(() => {
+                updateUrlPreview(url, mediaModal.dataset.mediaType);
+            }, 500);
+        });
+    }
+
+    // File input handling with preview
+    const fileInput = document.getElementById('media-file');
+    if (fileInput) {
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            const fileInfo = document.getElementById('file-info');
+            const preview = document.getElementById('file-preview');
+            
+            if (!file) {
+                if (fileInfo) fileInfo.textContent = '';
+                if (preview) preview.innerHTML = '';
+                showError('');
+                return;
+            }
+            
+            // Validate file size (max 10MB)
+            const maxSize = 10 * 1024 * 1024; // 10MB
+            if (file.size > maxSize) {
+                showError(`Файл слишком большой. Максимальный размер: ${(maxSize / 1024 / 1024).toFixed(0)}MB`);
+                e.target.value = '';
+                if (fileInfo) fileInfo.textContent = '';
+                if (preview) preview.innerHTML = '';
+                return;
+            }
+            
+            // Show file info
+            if (fileInfo) {
+                fileInfo.textContent = `${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+            }
+            
+            // Show preview based on file type
+            const mediaType = mediaModal.dataset.mediaType;
+            const objectUrl = URL.createObjectURL(file);
+            
+            if (preview) {
+                if (mediaType === 'image' && file.type.startsWith('image/')) {
+                    preview.innerHTML = `<img src="${objectUrl}" alt="Предпросмотр" class="media-preview">`;
+                } else if (mediaType === 'video' && file.type.startsWith('video/')) {
+                    preview.innerHTML = `
+                        <div class="media-preview-container">
+                            <video controls class="media-preview">
+                                <source src="${objectUrl}" type="${file.type}">
+                                Ваш браузер не поддерживает видео тег.
+                            </video>
+                        </div>`;
+                } else if (mediaType === 'audio' && file.type.startsWith('audio/')) {
+                    preview.innerHTML = `
+                        <div class="media-preview-container">
+                            <audio controls class="media-preview">
+                                <source src="${objectUrl}" type="${file.type}">
+                                Ваш браузер не поддерживает аудио тег.
+                            </audio>
+                        </div>`;
+                } else {
+                    preview.innerHTML = '<div class="preview-message">Предпросмотр недоступен для этого типа файла</div>';
+                }
+            }
+            
+            showError('');
+        });
+    }
     
-    document.getElementById('media-file').addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        const fileInfo = document.getElementById('file-info');
-        
-        if (file) {
-            fileInfo.textContent = `${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
-        } else {
-            fileInfo.textContent = '';
-        }
-    });
+    // Insert media button
+    const insertBtn = document.getElementById('insert-media');
+    if (insertBtn) {
+        insertBtn.addEventListener('click', handleMediaInsertion);
+    }
+}
+
+function updateUrlPreview(url, mediaType) {
+    const preview = document.getElementById('url-preview');
+    if (!preview) return;
     
-    document.getElementById('insert-media').addEventListener('click', () => {
-        const modal = document.getElementById('media-modal');
-        const mediaType = modal.dataset.mediaType;
-        const isUrlUpload = document.getElementById('upload-url').checked;
-        
+    // Check if it's a YouTube URL
+    if (url.includes('youtube.com/watch') || url.includes('youtu.be/')) {
+        const videoId = extractYouTubeId(url);
+        if (videoId) {
+            preview.innerHTML = `
+                <div class="youtube-preview">
+                    <div class="preview-thumbnail">
+                        <img src="https://img.youtube.com/vi/${videoId}/hqdefault.jpg" alt="YouTube Video Thumbnail">
+                        <div class="play-icon">▶</div>
+                    </div>
+                    <div class="preview-info">
+                        <div class="preview-title">YouTube видео</div>
+                        <div class="preview-url">${url}</div>
+                    </div>
+                </div>`;
+            showError('');
+            return;
+        }
+    }
+    
+    // Check if it's an image
+    if (mediaType === 'image' && /(\.(jpe?g|png|gif|webp|bmp)|^https?:\/\/.*\.(jpe?g|png|gif|webp|bmp)(?:\?.*)?$)/i.test(url)) {
+        const img = new Image();
+        img.onload = () => {
+            preview.innerHTML = `<img src="${url}" alt="Предпросмотр" class="media-preview">`;
+            showError('');
+        };
+        img.onerror = () => {
+            preview.innerHTML = '<div class="preview-error">Не удалось загрузить изображение</div>';
+            showError('Не удалось загрузить изображение по указанному URL');
+        };
+        img.src = url;
+        return;
+    }
+    
+    // Check if it's a video
+    if (mediaType === 'video' && /(\.(mp4|webm|ogg|mov|avi|wmv|flv|mkv)|^https?:\/\/.*\.(mp4|webm|ogg|mov|avi|wmv|flv|mkv)(?:\?.*)?$)/i.test(url)) {
+        preview.innerHTML = `
+            <div class="video-preview">
+                <video controls class="media-preview">
+                    <source src="${url}" type="video/mp4">
+                    Ваш браузер не поддерживает видео тег.
+                </video>
+                <div class="preview-info">
+                    <div class="preview-title">Видео</div>
+                    <div class="preview-url">${url}</div>
+                </div>
+            </div>`;
+        showError('');
+        return;
+    }
+    
+    // Check if it's an audio file
+    if (mediaType === 'audio' && /(\.(mp3|wav|ogg|m4a|aac|flac|wma)|^https?:\/\/.*\.(mp3|wav|ogg|m4a|aac|flac|wma)(?:\?.*)?$)/i.test(url)) {
+        preview.innerHTML = `
+            <div class="audio-preview">
+                <audio controls class="media-preview">
+                    <source src="${url}" type="audio/mp3">
+                    Ваш браузер не поддерживает аудио тег.
+                </audio>
+                <div class="preview-info">
+                    <div class="preview-title">Аудио</div>
+                    <div class="preview-url">${url}</div>
+                </div>
+            </div>`;
+        showError('');
+        return;
+    }
+    
+    // If we get here, the URL doesn't match any supported media types
+    preview.innerHTML = '<div class="preview-message">Предпросмотр недоступен для этого URL</div>';
+    showError('Указанный URL не соответствует поддерживаемым форматам');
+}
+
+async function handleMediaInsertion() {
+    const modal = document.getElementById('media-modal');
+    if (!modal) return;
+    
+    const mediaType = modal.dataset.mediaType;
+    const isUrlUpload = document.getElementById('tab-url').classList.contains('active');
+    const insertBtn = document.getElementById('insert-media');
+    const originalBtnText = insertBtn?.textContent;
+    
+    // Show loading state
+    if (insertBtn) {
+        insertBtn.textContent = 'Добавление...';
+        insertBtn.disabled = true;
+    }
+    
+    try {
         let mediaHtml = '';
         
         if (isUrlUpload) {
-            const url = document.getElementById('media-url').value;
-            if (url) {
-                if (url.includes('youtube.com/watch') || url.includes('youtu.be/')) {
-                    const videoId = extractYouTubeId(url);
-                    if (videoId) {
-                        mediaHtml = `<div class="editor-media editor-youtube">
-                            <iframe width="560" height="315" src="https://www.youtube.com/embed/${videoId}" 
-                                frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                                allowfullscreen style="max-width: 100%; aspect-ratio: 16/9;"></iframe>
+            // Handle URL upload
+            const url = document.getElementById('media-url')?.value.trim();
+            if (!url) {
+                showError('Пожалуйста, введите URL');
+                return;
+            }
+            
+            // Validate URL format
+            try {
+                new URL(url);
+            } catch {
+                showError('Пожалуйста, введите корректный URL');
+                return;
+            }
+            
+            // Generate media HTML based on type
+            if (url.includes('youtube.com/watch') || url.includes('youtu.be/')) {
+                const videoId = extractYouTubeId(url);
+                if (videoId) {
+                    mediaHtml = `
+                        <div class="editor-media editor-youtube">
+                            <div class="youtube-embed">
+                                <iframe 
+                                    width="560" 
+                                    height="315" 
+                                    src="https://www.youtube.com/embed/${videoId}" 
+                                    frameborder="0" 
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                    allowfullscreen>
+                                </iframe>
+                            </div>
                         </div>`;
-                    }
-                } else if (mediaType === 'image') {
-                    mediaHtml = `<img src="${url}" alt="Image" class="editor-media editor-image">`;
-                } else if (mediaType === 'video') {
-                    mediaHtml = `<div class="editor-media editor-video">
-                        <video controls src="${url}" style="max-width: 100%;"></video>
-                    </div>`;
                 } else {
-                    mediaHtml = `<div class="editor-media editor-audio">
-                        <audio controls src="${url}" style="width: 100%;"></audio>
-                    </div>`;
+                    showError('Неверный URL YouTube видео');
+                    return;
                 }
+            } else if (mediaType === 'image') {
+                mediaHtml = `<img src="${url}" alt="Изображение" class="editor-media editor-image" loading="lazy">`;
+            } else if (mediaType === 'video') {
+                mediaHtml = `
+                    <div class="editor-media editor-video">
+                        <video controls class="media-content">
+                            <source src="${url}" type="video/mp4">
+                            Ваш браузер не поддерживает видео тег.
+                        </video>
+                    </div>`;
+            } else if (mediaType === 'audio') {
+                mediaHtml = `
+                    <div class="editor-media editor-audio">
+                        <audio controls class="media-content">
+                            <source src="${url}" type="audio/mp3">
+                            Ваш браузер не поддерживает аудио тег.
+                        </audio>
+                    </div>`;
             }
         } else {
-            const file = document.getElementById('media-file').files[0];
-            if (file) {
-                // Загружаем файл на сервер
-                if (mediaType === 'image') {
-                    // Показываем загрузчик
-                    const insertBtn = document.getElementById('insert-media');
-                    const originalText = insertBtn.textContent;
-                    insertBtn.textContent = 'Загрузка...';
-                    insertBtn.disabled = true;
-                    
-                    mediaAPI.uploadImage(file)
-                        .then(response => {
-                            mediaHtml = `<img src="${response.url}" alt="${file.name}" class="editor-media editor-image">`;
-                            insertMediaToEditor(mediaHtml);
-                            modal.style.display = 'none';
-                        })
-                        .catch(error => {
-                            console.error('Error uploading image:', error);
-                            showModal('Ошибка', 'Не удалось загрузить изображение. Попробуйте использовать URL.');
-                        })
-                        .finally(() => {
-                            insertBtn.textContent = originalText;
-                            insertBtn.disabled = false;
-                        });
-                    return; // Выходим, так как вставка произойдет асинхронно
-                } else {
-                    // Для видео и аудио пока используем локальные файлы
-                    const objectUrl = URL.createObjectURL(file);
-                    if (mediaType === 'video') {
-                        mediaHtml = `<div class="editor-media editor-video">
-                            <video controls src="${objectUrl}" style="max-width: 100%;"></video>
+            // Handle file upload
+            const fileInput = document.getElementById('media-file');
+            if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+                showError('Пожалуйста, выберите файл');
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            
+            // Validate file type
+            const validTypes = {
+                'image': ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp'],
+                'video': ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime'],
+                'audio': ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp4', 'audio/aac']
+            };
+            
+            if (!validTypes[mediaType]?.includes(file.type)) {
+                showError(`Неподдерживаемый формат файла. Разрешенные форматы: ${validTypes[mediaType]?.join(', ')}`);
+                return;
+            }
+            
+            if (mediaType === 'image') {
+                // Upload image to server
+                try {
+                    const response = await mediaAPI.uploadImage(file);
+                    mediaHtml = `<img src="${response.url}" alt="${file.name}" class="editor-media editor-image" loading="lazy">`;
+                } catch (error) {
+                    console.error('Error uploading image:', error);
+                    showError('Не удалось загрузить изображение. Пожалуйста, попробуйте снова.');
+                    return;
+                }
+            } else {
+                // For now, use object URLs for video/audio files
+                // In a production environment, you would upload these to your server
+                const objectUrl = URL.createObjectURL(file);
+                
+                if (mediaType === 'video') {
+                    mediaHtml = `
+                        <div class="editor-media editor-video">
+                            <video controls class="media-content">
+                                <source src="${objectUrl}" type="${file.type}">
+                                Ваш браузер не поддерживает видео тег.
+                            </video>
                         </div>`;
-                    } else {
-                        mediaHtml = `<div class="editor-media editor-audio">
-                            <audio controls src="${objectUrl}" style="width: 100%;"></audio>
+                } else if (mediaType === 'audio') {
+                    mediaHtml = `
+                        <div class="editor-media editor-audio">
+                            <audio controls class="media-content">
+                                <source src="${objectUrl}" type="${file.type}">
+                                Ваш браузер не поддерживает аудио тег.
+                            </audio>
                         </div>`;
-                    }
                 }
             }
         }
         
+        // Insert the media into the editor
         if (mediaHtml) {
             insertMedia(mediaHtml);
-            modal.style.display = 'none';
+            closeMediaModal();
         }
-    });
+    } catch (error) {
+        console.error('Error handling media insertion:', error);
+        showError('Произошла ошибка при добавлении медиа. Пожалуйста, попробуйте снова.');
+    } finally {
+        // Reset button state
+        if (insertBtn) {
+            insertBtn.textContent = originalBtnText;
+            insertBtn.disabled = false;
+        }
+    }
 }
 
 function insertMedia(mediaHtml) {
