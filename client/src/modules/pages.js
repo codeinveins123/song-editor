@@ -1629,12 +1629,16 @@ const CHORDS_DATABASE = {
 // ============================================
 
 function showChordModal() {
-    const modal = document.getElementById('chord-modal');
+    let modal = document.getElementById('chord-modal');
     const editor = document.getElementById('song-editor');
     
+    // Если модальное окно не существует, создаем его
     if (!modal) {
-        console.error('chord-modal не найден');
-        return;
+        modal = document.createElement('div');
+        modal.id = 'chord-modal';
+        modal.className = 'modal-overlay';
+        modal.style.display = 'none';
+        document.body.appendChild(modal);
     }
     
     modal.innerHTML = `
