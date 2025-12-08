@@ -1961,90 +1961,56 @@ function insertMediaToEditor(mediaHtml) {
 
 // Простые функции вставки медиа через prompt
 function insertImagePrompt() {
-    const choice = confirm('Загрузить файл или вставить URL?\n\nOK = Загрузить файл\nОтмена = Вставить URL');
-    
-    if (choice) {
-        // Загрузка файла
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = 'image/*';
-        input.onchange = async (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                try {
-                    // Показываем загрузчик
-                    const editor = document.getElementById('song-editor');
-                    const originalContent = editor.innerHTML;
-                    editor.innerHTML += '<div style="color: #666; padding: 10px;">Загрузка изображения...</div>';
-                    
-                    const response = await mediaAPI.uploadImage(file);
-                    const mediaHtml = `<img src="${response.url}" alt="${file.name}" class="editor-media editor-image">`;
-                    insertMedia(mediaHtml);
-                } catch (error) {
-                    console.error('Error uploading image:', error);
-                    showModal('Ошибка', 'Не удалось загрузить изображение. Попробуйте использовать URL.', 'error');
-                    // Восстанавливаем контент
-                    editor.innerHTML = originalContent;
-                }
-            }
-        };
-        input.click();
-    } else {
-        // Вставка URL
-        const url = prompt('Введите URL изображения:');
-        if (url) {
-            const mediaHtml = `<img src="${url}" alt="Image" class="editor-media editor-image">`;
+    showPromptModal(
+        'Вставить изображение',
+        'Введите URL изображения:',
+        '',
+        { type: 'url', description: 'Поддерживаются форматы: JPG, PNG, GIF, WebP' }
+    ).then(url => {
+        if (url && url.trim()) {
+            const mediaHtml = `<img src="${url.trim()}" alt="Image" class="editor-media editor-image" style="max-width: 100%; height: auto;">`;
             insertMedia(mediaHtml);
         }
-    }
+    });
 }
 
 function insertVideoPrompt() {
-    const url = prompt('Введите URL YouTube видео:');
-    if (url) {
-        const videoId = extractYouTubeId(url);
-        if (videoId) {
-            const mediaHtml = `<div class="editor-media editor-youtube">
-                <iframe width="560" height="315" src="https://www.youtube.com/embed/${videoId}" 
-                    frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                    allowfullscreen style="max-width: 100%; aspect-ratio: 16/9;"></iframe>
-            </div>`;
-            insertMedia(mediaHtml);
-        } else {
-            showModal('Ошибка', 'Неверный URL YouTube видео', 'error');
+    showPromptModal(
+        'Вставить видео',
+        'Введите URL YouTube видео:',
+        '',
+        { type: 'url', description: 'Поддерживаются ссылки на YouTube видео' }
+    ).then(url => {
+        if (url && url.trim()) {
+            const videoId = extractYouTubeId(url.trim());
+            if (videoId) {
+                const mediaHtml = `<div class="editor-media editor-youtube">
+                    <iframe width="560" height="315" src="https://www.youtube.com/embed/${videoId}" 
+                        frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                        allowfullscreen style="max-width: 100%; aspect-ratio: 16/9;"></iframe>
+                </div>`;
+                insertMedia(mediaHtml);
+            } else {
+                showModal('Ошибка', 'Неверный URL YouTube видео', 'error');
+            }
         }
-    }
+    });
 }
 
 function insertAudioPrompt() {
-    const choice = confirm('Загрузить файл или вставить URL?\n\nOK = Загрузить файл\nОтмена = Вставить URL');
-    
-    if (choice) {
-        // Загрузка файла
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = 'audio/*';
-        input.onchange = (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const objectUrl = URL.createObjectURL(file);
-                const mediaHtml = `<div class="editor-media editor-audio">
-                    <audio controls src="${objectUrl}" style="width: 100%;"></audio>
-                </div>`;
-                insertMedia(mediaHtml);
-            }
-        };
-        input.click();
-    } else {
-        // Вставка URL
-        const url = prompt('Введите URL аудио файла:');
-        if (url) {
+    showPromptModal(
+        'Вставить аудио',
+        'Введите URL аудио файла:',
+        '',
+        { type: 'url', description: 'Поддерживаются форматы: MP3, WAV, OGG' }
+    ).then(url => {
+        if (url && url.trim()) {
             const mediaHtml = `<div class="editor-media editor-audio">
-                <audio controls src="${url}" style="width: 100%;"></audio>
+                <audio controls src="${url.trim()}" style="width: 100%;"></audio>
             </div>`;
             insertMedia(mediaHtml);
         }
-    }
+    });
 }
 
 // ============================================

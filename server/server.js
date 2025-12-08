@@ -657,6 +657,7 @@ app.get('/api/auth/google/exchange', async (req, res) => {
         client_secret: process.env.GOOGLE_CLIENT_SECRET,
         code: code,
         grant_type: 'authorization_code',
+        redirect_uri: `${process.env.CLIENT_URL || 'https://song-editor.netlify.app'}/auth/google/callback`
         /* redirect_uri: `${process.env.CLIENT_URL || 'http://localhost:5173'}/auth/google/callback` */
       })
     });
