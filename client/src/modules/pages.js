@@ -1632,6 +1632,11 @@ function showChordModal() {
     const modal = document.getElementById('chord-modal');
     const editor = document.getElementById('song-editor');
     
+    if (!modal) {
+        console.error('chord-modal не найден');
+        return;
+    }
+    
     modal.innerHTML = `
         <div class="modal-content chord-modal-large">
             <div class="modal-header">
