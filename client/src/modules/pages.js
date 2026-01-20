@@ -1416,31 +1416,31 @@ export const showAddSongForm = () => {
             <div class="modal-content">
                 <div class="modal-header">
                     <h3 id="media-modal-title">Добавить медиа</h3>
+                    <span id="media-type-label" class="media-type-label"></span>
                     <button class="modal-close">&times;</button>
                 </div>
                 <div class="modal-body">
-                    <div class="media-upload-options">
-                        <div class="upload-option">
-                            <input type="radio" id="upload-url" name="media-type" value="url" checked>
-                            <label for="upload-url">Ссылка (URL)</label>
+                    <form id="media-form">
+                        <div class="media-upload-tabs">
+                            <button id="tab-url" class="media-tab active">Ссылка (URL)</button>
+                            <button id="tab-file" class="media-tab">Файл</button>
                         </div>
-                        <div class="upload-option">
-                            <input type="radio" id="upload-file" name="media-type" value="file">
-                            <label for="upload-file">Загрузить файл</label>
+                        
+                        <div id="url-upload" class="upload-section">
+                            <input type="url" id="media-url" placeholder="https://example.com/image.jpg" class="url-input">
+                            <div class="media-preview-small" id="url-preview"></div>
                         </div>
-                    </div>
-                    
-                    <div id="url-upload" class="upload-section">
-                        <input type="url" id="media-url" placeholder="https://example.com/image.jpg" class="url-input">
-                        <div class="media-preview-small" id="url-preview"></div>
-                    </div>
-                    
-                    <div id="file-upload" class="upload-section" style="display: none;">
-                        <input type="file" id="media-file" accept="image/*,video/*,audio/*">
-                        <div class="file-info" id="file-info"></div>
-                    </div>
-                    
-                    <button id="insert-media" class="btn btn-primary">Вставить в редактор</button>
+                        
+                        <div id="file-upload" class="upload-section" style="display: none;">
+                            <input type="file" id="media-file" accept="image/*,video/*,audio/*">
+                            <div class="file-info" id="file-info"></div>
+                            <div class="media-preview-small" id="file-preview"></div>
+                        </div>
+                        
+                        <div id="media-error" class="media-error" style="display:none;"></div>
+                        
+                        <button type="button" id="insert-media" class="btn btn-primary">Вставить в редактор</button>
+                    </form>
                 </div>
             </div>
         </div>
@@ -1488,6 +1488,7 @@ function setupSongEditor() {
     
     // Настройка обработчиков
     setupButtonHandler('add-chord-btn', showChordModal);
+    // Медиа вставляем через простые модальные промпты, которые сразу пишут HTML в редактор
     setupButtonHandler('add-image-btn', () => insertImagePrompt());
     setupButtonHandler('add-video-btn', () => insertVideoPrompt());
     setupButtonHandler('add-audio-btn', () => insertAudioPrompt());
@@ -1999,79 +2000,11 @@ function setupModalHandlers() {
 function updateUrlPreview(url, mediaType) {
     const preview = document.getElementById('url-preview');
     if (!preview) return;
-    
-    // Check if it's a YouTube URL
-    if (url.includes('youtube.com/watch') || url.includes('youtu.be/')) {
-        const videoId = extractYouTubeId(url);
-        if (videoId) {
-            preview.innerHTML = `
-                <div class="youtube-preview">
-                    <div class="preview-thumbnail">
-                        <img src="https://img.youtube.com/vi/${videoId}/hqdefault.jpg" alt="YouTube Video Thumbnail">
-                        <div class="play-icon">▶</div>
-                    </div>
-                    <div class="preview-info">
-                        <div class="preview-title">YouTube видео</div>
-                        <div class="preview-url">${url}</div>
-                    </div>
-                </div>`;
-            showError('');
-            return;
-        }
-    }
-    
-    // Check if it's an image
-    if (mediaType === 'image' && /(\.(jpe?g|png|gif|webp|bmp)|^https?:\/\/.*\.(jpe?g|png|gif|webp|bmp)(?:\?.*)?$)/i.test(url)) {
-        const img = new Image();
-        img.onload = () => {
-            preview.innerHTML = `<img src="${url}" alt="Предпросмотр" class="media-preview">`;
-            showError('');
-        };
-        img.onerror = () => {
-            preview.innerHTML = '<div class="preview-error">Не удалось загрузить изображение</div>';
-            showError('Не удалось загрузить изображение по указанному URL');
-        };
-        img.src = url;
-        return;
-    }
-    
-    // Check if it's a video
-    if (mediaType === 'video' && /(\.(mp4|webm|ogg|mov|avi|wmv|flv|mkv)|^https?:\/\/.*\.(mp4|webm|ogg|mov|avi|wmv|flv|mkv)(?:\?.*)?$)/i.test(url)) {
-        preview.innerHTML = `
-            <div class="video-preview">
-                <video controls class="media-preview">
-                    <source src="${url}" type="video/mp4">
-                    Ваш браузер не поддерживает видео тег.
-                </video>
-                <div class="preview-info">
-                    <div class="preview-title">Видео</div>
-                    <div class="preview-url">${url}</div>
-                </div>
-            </div>`;
-        showError('');
-        return;
-    }
-    
-    // Check if it's an audio file
-    if (mediaType === 'audio' && /(\.(mp3|wav|ogg|m4a|aac|flac|wma)|^https?:\/\/.*\.(mp3|wav|ogg|m4a|aac|flac|wma)(?:\?.*)?$)/i.test(url)) {
-        preview.innerHTML = `
-            <div class="audio-preview">
-                <audio controls class="media-preview">
-                    <source src="${url}" type="audio/mp3">
-                    Ваш браузер не поддерживает аудио тег.
-                </audio>
-                <div class="preview-info">
-                    <div class="preview-title">Аудио</div>
-                    <div class="preview-url">${url}</div>
-                </div>
-            </div>`;
-        showError('');
-        return;
-    }
-    
-    // If we get here, the URL doesn't match any supported media types
-    preview.innerHTML = '<div class="preview-message">Предпросмотр недоступен для этого URL</div>';
-    showError('Указанный URL не соответствует поддерживаемым форматам');
+
+    // Больше не показываем визуальный предпросмотр в модальном окне,
+    // оставляем только проверку на корректность URL через showError.
+    preview.innerHTML = '';
+    showError('');
 }
 
 async function handleMediaInsertion() {
@@ -2118,7 +2051,7 @@ async function handleMediaInsertion() {
                                 <iframe 
                                     width="560" 
                                     height="315" 
-                                    src="https://www.youtube.com/embed/${videoId}" 
+                                    src="https://www.youtube-nocookie.com/embed/${videoId}" 
                                     frameborder="0" 
                                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                                     allowfullscreen>
@@ -2288,7 +2221,7 @@ function insertVideoPrompt() {
             const videoId = extractYouTubeId(url.trim());
             if (videoId) {
                 const mediaHtml = `<div class="editor-media editor-youtube">
-                    <iframe width="560" height="315" src="https://www.youtube.com/embed/${videoId}" 
+                    <iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/${videoId}" 
                         frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                         allowfullscreen style="max-width: 100%; aspect-ratio: 16/9;"></iframe>
                 </div>`;

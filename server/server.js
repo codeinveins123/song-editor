@@ -5,6 +5,8 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import cron from 'node-cron';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 
 dotenv.config();
 
@@ -16,32 +18,26 @@ const PORT = process.env.PORT || 3001;
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Базовые HTTP-заголовки безопасности
+app.use(helmet({ contentSecurityPolicy: false }));
+
 // Middleware CORS
 const allowedOrigins = [
   'http://localhost:5173',
   'http://127.0.0.1:5173',
   'https://song-editor.netlify.app/'
 ];
-app.use(cors());
-/* app.use(cors({
-  origin: function(origin, callback) {
-    // Разрешаем запросы без origin (например, из мобильных приложений)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = 'Доступ с этого источника не разрешен';
-      return callback(new Error(msg), false);
-    }
-    return callback(null, true);
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  exposedHeaders: ['Content-Range', 'X-Content-Range']
-})); */
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true
+}));
 
-// Обработка предварительных запросов CORS
-app.options('*', cors());
+// Ограничение частоты запросов к API
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60
+});
+app.use('/api/', apiLimiter);
 
 // CSP Headers for security
 app.use((req, res, next) => {
@@ -53,7 +49,7 @@ app.use((req, res, next) => {
     "img-src 'self' data: https:; " +
     "connect-src 'self' https://accounts.google.com https://oauth2.googleapis.com https://www.googleapis.com https://api.emailjs.com; " +
     "font-src 'self' data:; " +
-    "frame-src 'self' https://accounts.google.com; " +
+    "frame-src 'self' https://accounts.google.com https://www.youtube.com https://www.youtube-nocookie.com; " +
     "object-src 'none'; " +
     "base-uri 'self'; " +
     "form-action 'self';"
