@@ -5,6 +5,7 @@ import { initializeGoogleAuth, handleGoogleAuth } from './googleAuth.js'
 import { setupAuthForms } from './auth.js'
 import { changePassword, updateProfile, updateAvatar, getStats, songsAPI, mediaAPI } from './api.js';
 import { showModal, showConfirmModal, showPromptModal, showCurrentPasswordPrompt, showNewPasswordPrompt, showConfirmPasswordPrompt } from './modal.js';
+import { API_BASE_URL } from '../config/apiConfig.js';
 
 // ==========================
 // Несохраненные изменения: утилиты
@@ -1118,7 +1119,6 @@ async function handleDeleteAccount() {
     if (!confirmed) return;
 
     try {
-        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://song-editor.onrender.com/api';
         const response = await fetch(`${API_BASE_URL}/auth/profile`, {
             method: 'DELETE',
             headers: {
@@ -1152,7 +1152,6 @@ async function handleDeleteAccount() {
 
 async function checkDeletionStatus() {
     try {
-        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://song-editor.onrender.com/api';
         const response = await fetch(`${API_BASE_URL}/auth/profile/deletion-status`, {
             headers: {
                 'Authorization': `Bearer ${getToken()}`
@@ -1213,7 +1212,6 @@ function updateDeleteStatusUI(status) {
 
 async function handleCancelDelete() {
     try {
-        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://song-editor.onrender.com/api';
         const response = await fetch(`${API_BASE_URL}/auth/profile/cancel-delete`, {
             method: 'POST',
             headers: {

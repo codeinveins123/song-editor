@@ -1,6 +1,4 @@
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://song-editor.onrender.com/api';
-
+import { API_BASE_URL } from '../config/apiConfig.js';
 
 // Общая функция для API запросов
 async function apiRequest(endpoint, options = {}) {

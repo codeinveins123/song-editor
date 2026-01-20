@@ -4,6 +4,7 @@ import { setupNavListeners, updateNavigation } from './modules/navigation.js'
 import { showWelcomePage, showSuccessPage } from './modules/pages.js'
 import { setupAuthForms } from './modules/auth.js'
 import { showModal } from './modules/modal.js'
+import { API_BASE_URL } from './config/apiConfig.js';
 
 // Make updateNavigation globally available
 window.updateNavigation = updateNavigation;
@@ -29,7 +30,6 @@ async function checkAuth() {
         try {
             // Проверяем токен на сервере и получаем актуальные данные пользователя
             console.log('🔄 Проверка токена на сервере...')
-            const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://song-editor.onrender.com/api';
             const response = await fetch(`${API_BASE_URL}/auth/profile`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -343,7 +343,6 @@ function showForcefulModal(title, content) {
 // Функция восстановления аккаунта
 async function restoreAccount() {
     try {
-        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://song-editor.onrender.com/api';
         const token = localStorage.getItem('token');
         
         const response = await fetch(`${API_BASE_URL}/auth/profile/cancel-delete`, {
